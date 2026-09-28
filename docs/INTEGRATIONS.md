@@ -39,3 +39,18 @@ Use a long random JWT_SECRET and OTP_PEPPER. Restrict CORS to the production app
 
 ## Important
 The repository contains integration adapters and production-safe defaults, but third-party accounts (SMS/Firebase/storage/TURN) must be created by the owner because they require the owner's credentials and billing/terms acceptance.
+
+
+## 8. Monetization and rewards
+The app should have transparent, non-pyramid revenue sources. The owner can earn from:
+- optional in-app ads (when enabled and compliant with Google Play policies)
+- optional paid Premium/Business subscriptions
+- paid business features or storage tiers
+- other clearly disclosed purchases approved by the payment provider
+
+Users can have a Rewards/Points screen for legitimate actions such as completing profile/setup or promotional campaigns. Rewards must not require users to recruit or pay money to unlock commissions. The database records reward transactions and owner revenue events separately so user rewards and business revenue remain auditable.
+
+Do not promise users a cash reward unless a real payment/reward provider and its terms are configured. Payment provider credentials and merchant verification are required before charging users.
+
+## 9. Owner dashboard
+Add an owner-only dashboard section showing total users, active users, subscriptions, ad/revenue events, reward points issued, and recent transactions. Revenue numbers should be based on recorded provider-confirmed events, not guesses.
