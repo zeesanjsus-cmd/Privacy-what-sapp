@@ -117,17 +117,73 @@ class _ChatsState extends State<Chats>{
 }
 }
 
-class Chat extends StatefulWidget{final String id,name;const Chat({super.key,required this.id,required this.name});@override State<Chat> createState()=>_ChatState();}
-class _ChatState extends State<Chat>{
- final input=TextEditingController();List messages=[];bool loading=true;
- Future<void> load()async{try{messages=await api.get('/conversations/'+id+'/messages');}catch(_){}if(mounted)setState(()=>loading=false);}
- Future<void> send()async{final b=input.text.trim();if(b.isEmpty)return;input.clear();try{final r=await api.post('/conversations/'+id+'/messages',{'body':b,'messageType':'text'});if(mounted)setState(()=>messages=[...messages,r]);}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString())));}}
- @override void initState(){super.initState();load();}
- @override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:Text(name),actions:[IconButton(onPressed:(){},icon:const Icon(Icons.call)),IconButton(onPressed:(){},icon:const Icon(Icons.videocam))]),
- body:Column(children:[Expanded(child:loading?const Center(child:CircularProgressIndicator()):ListView.builder(padding:const EdgeInsets.all(12),itemCount:messages.length,itemBuilder:(c,i)=>Align(alignment:Alignment.centerLeft,child:Container(margin:const EdgeInsets.symmetric(vertical:4),padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:panel,borderRadius:BorderRadius.circular(16)),child:Text(messages[i]['body']??''))))),
- Container(color:panel,padding:const EdgeInsets.all(8),child:Row(children:[IconButton(onPressed:(){},icon:const Icon(Icons.attach_file)),Expanded(child:TextField(controller:input,onSubmitted:(_)=>send(),decoration:InputDecoration(hintText:'Message',filled:true,fillColor:black,border:OutlineInputBorder(borderRadius:BorderRadius.circular(25))))),IconButton(onPressed:send,icon:const Icon(Icons.send,color:red))]))
- ]));
+class Chat extends StatefulWidget{
+  final String id;
+  final String name;
+  const Chat({super.key, required this.id, required this.name});
+  @override State<Chat> createState()=>_ChatState();
 }
+
+class _ChatState extends State<Chat>{
+  final input=TextEditingController();
+  List<dynamic> messages=[];
+  bool loading=true;
+
+  Future<void> load() async {
+    try {
+      final result=await api.get('/conversations/${widget.id}/messages');
+      if(result is List) messages=result;
+    } catch (_) {}
+    if(mounted) setState(()=>loading=false);
+  }
+
+  Future<void> send() async {
+    final body=input.text.trim();
+    if(body.isEmpty) return;
+    input.clear();
+    try {
+      final result=await api.post('/conversations/${widget.id}/messages', {'body':body,'messageType':'text'});
+      if(mounted) setState(()=>messages=[...messages,result]);
+    } catch(e) {
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString())));
+    }
+  }
+
+  @override void initState(){super.initState();load();}
+  @override void dispose(){input.dispose();super.dispose();}
+
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:Text(widget.name),actions:[
+      IconButton(onPressed:(){},icon:const Icon(Icons.call)),
+      IconButton(onPressed:(){},icon:const Icon(Icons.videocam)),
+    ]),
+    body:Column(children:[
+      Expanded(child:loading
+        ? const Center(child:CircularProgressIndicator())
+        : ListView.builder(
+            padding:const EdgeInsets.all(12),
+            itemCount:messages.length,
+            itemBuilder:(context,index)=>Align(
+              alignment:Alignment.centerLeft,
+              child:Container(
+                margin:const EdgeInsets.symmetric(vertical:4),
+                padding:const EdgeInsets.all(12),
+                decoration:BoxDecoration(color:panel,borderRadius:BorderRadius.circular(16)),
+                child:Text(messages[index]['body']??''),
+              ),
+            ),
+          )),
+      Container(color:panel,padding:const EdgeInsets.all(8),child:Row(children:[
+        IconButton(onPressed:(){},icon:const Icon(Icons.attach_file)),
+        Expanded(child:TextField(
+          controller:input,
+          onSubmitted:(_)=>send(),
+          decoration:InputDecoration(hintText:'Message',filled:true,fillColor:black,border:OutlineInputBorder(borderRadius:BorderRadius.circular(25))),
+        )),
+        IconButton(onPressed:send,icon:const Icon(Icons.send,color:red)),
+      ])),
+    ]),
+  );
 }
 
 class Status extends StatelessWidget{const Status({super.key});@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('Status')),floatingActionButton:FloatingActionButton(backgroundColor:red,onPressed:(){},child:const Icon(Icons.add)),body:const Center(child:Text('Status module ready for media storage integration.')));}
