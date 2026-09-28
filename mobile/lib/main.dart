@@ -276,13 +276,103 @@ class _ChatState extends State<Chat> {
   }
 }
 
-class Status extends StatelessWidget {
+class Status extends StatefulWidget {
   const Status({super.key});
-  @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Status')),
-    floatingActionButton: FloatingActionButton(backgroundColor: red, onPressed: () {}, child: const Icon(Icons.add)),
-    body: const Center(child: Text('Status module ready for media storage integration.')),
-  );
+  @override State<Status> createState() => _StatusState();
+}
+
+class _StatusState extends State<Status> {
+  List<dynamic> items = [];
+  bool loading = true;
+  final caption = TextEditingController();
+
+  Future<void> load() async {
+    try {
+      final r = await api.get('/statuses');
+      if (r is List) items = r;
+    } catch (_) {}
+    if (mounted) setState(() => loading = false);
+  }
+
+  Future<void> addStatus() async {
+    caption.clear();
+    final value = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: panel,
+        title: const Text('New status'),
+        content: TextField(
+          controller: caption,
+          autofocus: true,
+          maxLines: 4,
+          decoration: const InputDecoration(hintText: 'Write a status...'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: red),
+            onPressed: () => Navigator.pop(context, caption.text.trim()),
+            child: const Text('Post'),
+          ),
+        ],
+      ),
+    );
+    if (value == null || value.isEmpty) return;
+    try {
+      await api.post('/statuses', {'caption': value});
+      await load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  Future<void> deleteStatus(String id) async {
+    try {
+      await api.delete('/statuses/$id');
+      await load();
+    } catch (_) {}
+  }
+
+  @override void initState() { super.initState(); load(); }
+  @override void dispose() { caption.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Status'), actions: [
+        IconButton(onPressed: load, icon: const Icon(Icons.refresh)),
+      ]),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: red, onPressed: addStatus, child: const Icon(Icons.add),
+      ),
+      body: loading
+        ? const Center(child: CircularProgressIndicator())
+        : items.isEmpty
+          ? const Center(child: Text('No status yet. Tap + to post.'))
+          : RefreshIndicator(
+              onRefresh: load,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: items.length,
+                itemBuilder: (_, i) {
+                  final x = items[i];
+                  return Card(
+                    color: panel,
+                    child: ListTile(
+                      leading: const CircleAvatar(backgroundColor: red, child: Icon(Icons.person)),
+                      title: Text(x['caption'] ?? 'Media status'),
+                      subtitle: Text('Expires in 24 hours'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => deleteStatus(x['id'].toString()),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+    );
+  }
 }
 
 class Calls extends StatelessWidget {
