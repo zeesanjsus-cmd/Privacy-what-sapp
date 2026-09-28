@@ -57,3 +57,27 @@ CREATE TABLE IF NOT EXISTS audit_logs(
 );
 CREATE INDEX IF NOT EXISTS reports_status_idx ON reports(status);
 CREATE INDEX IF NOT EXISTS audit_created_idx ON audit_logs(created_at);
+
+
+-- Monetization, rewards and transparent owner revenue tracking
+CREATE TABLE IF NOT EXISTS reward_accounts(
+ user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+ points BIGINT NOT NULL DEFAULT 0 CHECK(points >= 0),
+ updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS reward_transactions(
+ id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+ points BIGINT NOT NULL, type TEXT NOT NULL, description TEXT, created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS revenue_events(
+ id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+ source TEXT NOT NULL, amount_minor BIGINT NOT NULL DEFAULT 0 CHECK(amount_minor >= 0), currency TEXT NOT NULL DEFAULT 'PKR',
+ provider TEXT, external_reference TEXT, metadata JSONB, created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS revenue_created_idx ON revenue_events(created_at);
+CREATE INDEX IF NOT EXISTS reward_tx_user_idx ON reward_transactions(user_id,created_at DESC);
+CREATE TABLE IF NOT EXISTS subscriptions(
+ id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+ plan TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'active', provider TEXT, external_reference TEXT,
+ starts_at TIMESTAMPTZ DEFAULT now(), ends_at TIMESTAMPTZ
+);
