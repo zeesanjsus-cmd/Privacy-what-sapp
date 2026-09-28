@@ -426,9 +426,19 @@ class _StatusState extends State<Status> {
                   return Card(
                     color: panel,
                     child: ListTile(
-                      leading: const CircleAvatar(backgroundColor: red, child: Icon(Icons.person)),
-                      title: Text(x['caption'] ?? 'Media status'),
+
                       subtitle: Text('Expires in 24 hours'),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      leading: (x['media_url'] ?? x['mediaUrl']) != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                (x['media_url'] ?? x['mediaUrl']).toString(),
+                                width: 54, height: 54, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const CircleAvatar(backgroundColor: red, child: Icon(Icons.image)),
+                              ),
+                            )
+                          : const CircleAvatar(backgroundColor: red, child: Icon(Icons.person)),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () => deleteStatus(x['id'].toString()),
