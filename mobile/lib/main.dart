@@ -28,6 +28,11 @@ class Api {
     if (r.statusCode >= 400) throw Exception(_err(r));
     return jsonDecode(r.body);
   }
+  Future<dynamic> delete(String path) async {
+    final r = await http.delete(Uri.parse('$apiBaseUrl$path'), headers: await headers());
+    if (r.statusCode >= 400) throw Exception(_err(r));
+    return r.body.isEmpty ? {} : jsonDecode(r.body);
+  }
   Future<dynamic> upload(String path, XFile file) async {
     final token = await storage.read(key: 'token');
     final request = http.MultipartRequest('POST', Uri.parse('$apiBaseUrl$path'));
@@ -557,8 +562,8 @@ class Settings extends StatelessWidget {
   }
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Settings')),
-    body: ListView(children: const [
-      UserAccountsDrawerHeader(
+    body: ListView(children: [
+      const UserAccountsDrawerHeader(
         decoration: BoxDecoration(color: panel),
         currentAccountPicture: CircleAvatar(backgroundColor: red, child: Icon(Icons.person)),
         accountName: Text('Your account'), accountEmail: Text('OTP authenticated'),
@@ -566,7 +571,8 @@ class Settings extends StatelessWidget {
       ListTile(leading: Icon(Icons.lock), title: Text('Privacy'), subtitle: Text('Privacy and blocked users')),
       ListTile(leading: Icon(Icons.notifications), title: Text('Notifications'), subtitle: Text('Firebase push notifications')),
       ListTile(leading: Icon(Icons.security), title: Text('Security'), subtitle: Text('Device sessions and alerts')),
-      ListTile(leading: Icon(Icons.business), title: Text('Business tools')),
+      const ListTile(leading: Icon(Icons.business), title: Text('Business tools')),
+      ListTile(leading: const Icon(Icons.logout), title: const Text('Log out'), onTap: () => logout(context)),
     ]),
   );
 }
