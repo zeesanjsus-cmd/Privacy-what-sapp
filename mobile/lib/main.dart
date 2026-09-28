@@ -115,7 +115,6 @@ class _ChatsState extends State<Chats>{
   onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>Chat(id:x['id'],name:x['title']??'Chat'))).then((_)=>load())
  ])));
 }
-}
 
 class Chat extends StatefulWidget{
   final String id;
