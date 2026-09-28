@@ -247,8 +247,8 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.name), actions: [
-        IconButton(onPressed: () {}, icon: const Icon(Icons.call)),
-        IconButton(onPressed: () {}, icon: const Icon(Icons.videocam)),
+        IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallScreen(name: widget.name, video: false))), icon: const Icon(Icons.call)),
+        IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CallScreen(name: widget.name, video: true))), icon: const Icon(Icons.videocam)),
       ]),
       body: Column(children: [
         Expanded(
@@ -371,6 +371,63 @@ class _StatusState extends State<Status> {
                 },
               ),
             ),
+    );
+  }
+}
+
+class CallScreen extends StatefulWidget {
+  final String name;
+  final bool video;
+  const CallScreen({super.key, required this.name, required this.video});
+  @override State<CallScreen> createState() => _CallScreenState();
+}
+
+class _CallScreenState extends State<CallScreen> {
+  bool muted = false;
+  bool speaker = false;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: black,
+      appBar: AppBar(title: Text(widget.video ? 'Video call' : 'Voice call')),
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const CircleAvatar(radius: 58, backgroundColor: red, child: Icon(Icons.person, size: 58)),
+                const SizedBox(height: 18),
+                Text(widget.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                const Text('Connecting…', style: TextStyle(color: Colors.white60)),
+                if (widget.video) ...[
+                  const SizedBox(height: 28),
+                  const Text('Camera preview will start after WebRTC/TURN setup.',
+                    textAlign: TextAlign.center, style: TextStyle(color: Colors.white54)),
+                ],
+              ]),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(30, 10, 30, 35),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+              IconButton.filled(
+                onPressed: () => setState(() => muted = !muted),
+                icon: Icon(muted ? Icons.mic_off : Icons.mic), 
+              ),
+              IconButton.filled(
+                onPressed: () => setState(() => speaker = !speaker),
+                icon: Icon(speaker ? Icons.volume_up : Icons.volume_down),
+              ),
+              FloatingActionButton(
+                backgroundColor: Colors.red,
+                onPressed: () => Navigator.pop(context),
+                child: const Icon(Icons.call_end),
+              ),
+            ]),
+          ),
+        ],
+      ),
     );
   }
 }
