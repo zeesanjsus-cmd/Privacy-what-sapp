@@ -30,6 +30,17 @@ jobs:
         working-directory: mobile
         run: flutter analyze
 
+      - name: Set Android compile SDK
+        working-directory: mobile
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle.kts')
+          s=p.read_text()
+          s=s.replace('compileSdk = flutter.compileSdkVersion', 'compileSdk = 36')
+          p.write_text(s)
+          PY
+
       - name: Build debug APK
         working-directory: mobile
         run: flutter build apk --debug
