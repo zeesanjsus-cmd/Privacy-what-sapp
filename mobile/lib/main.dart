@@ -10,6 +10,7 @@ const red = Color(0xFFE53935);
 const black = Color(0xFF080808);
 const panel = Color(0xFF151515);
 const apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://10.0.2.2:8080');
+const apiBaseConfigured = String.fromEnvironment('API_BASE_URL', defaultValue: '') != '';
 const storage = FlutterSecureStorage();
 
 class Api {
