@@ -469,7 +469,10 @@ class Calls extends StatelessWidget {
   const Calls({super.key});
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Calls')),
-    body: const Center(child: Text('Call signaling foundation is ready; WebRTC/TURN credentials are required for live media.')),
+    body: ListView(children: const [
+      ListTile(leading: CircleAvatar(backgroundColor: red, child: Icon(Icons.call)), title: Text('Call history'), subtitle: Text('Your recent calls will appear here.')),
+      ListTile(leading: Icon(Icons.info_outline), title: Text('Live calling setup'), subtitle: Text('WebRTC + TURN server is required for real voice/video media.')),
+    ]),
   );
 }
 
