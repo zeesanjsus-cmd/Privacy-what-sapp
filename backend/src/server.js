@@ -227,8 +227,17 @@ app.post('/media/upload', auth, upload.single('file'), async (req, res) => {
 });
 
 app.get('/statuses', auth, async (req, res) => {
-  const q = await db(`SELECT id,user_id,media_url,caption,expires_at,created_at
-    FROM statuses WHERE expires_at IS NULL OR expires_at > now() ORDER BY created_at DESC LIMIT 500`);
+  const q = await db(`SELECT s.id,s.user_id,s.media_url,s.caption,s.expires_at,s.created_at
+    FROM statuses s
+    WHERE (s.expires_at IS NULL OR s.expires_at > now())
+      AND s.user_id <> $1
+      AND NOT EXISTS (SELECT 1 FROM blocks b WHERE b.blocker_id=$1 AND b.blocked_id=s.user_id)
+      AND NOT EXISTS (SELECT 1 FROM blocks b WHERE b.blocker_id=s.user_id AND b.blocked_id=$1)
+    UNION ALL
+    SELECT s.id,s.user_id,s.media_url,s.caption,s.expires_at,s.created_at
+    FROM statuses s
+    WHERE s.user_id=$1 AND (s.expires_at IS NULL OR s.expires_at > now())
+    ORDER BY created_at DESC LIMIT 500`, [req.user.id]);
   res.json(q.rows);
 });
 
