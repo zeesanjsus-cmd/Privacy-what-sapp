@@ -1,0 +1,36 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Create Android platform
+        run: |
+          cd mobile
+          flutter create --platforms=android --org com.privacywhatsapp .
+      - name: Get packages
+        run: |
+          cd mobile
+          flutter pub get
+      - name: Analyze
+        run: |
+          cd mobile
+          flutter analyze
+      - name: Build APK
+        run: |
+          cd mobile
+          flutter build apk --debug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: privacy-whatsapp-debug-apk
+          path: mobile/build/app/outputs/flutter-apk/app-debug.apk
