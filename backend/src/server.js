@@ -209,6 +209,36 @@ app.post('/conversations/:id/messages', auth, async (req, res) => {
   res.status(201).json(msg);
 });
 
+app.get('/statuses', auth, async (req, res) => {
+  const q = await db(`SELECT id,user_id,media_url,caption,expires_at,created_at
+    FROM statuses WHERE expires_at IS NULL OR expires_at > now() ORDER BY created_at DESC LIMIT 500`);
+  res.json(q.rows);
+});
+
+app.post('/statuses', auth, async (req, res) => {
+  const mediaUrl = req.body?.mediaUrl || null;
+  const caption = req.body?.caption || null;
+  if (!mediaUrl && !caption) return res.status(400).json({ error: 'status content required' });
+  const q = await db(`INSERT INTO statuses(user_id,media_url,caption,expires_at)
+    VALUES($1,$2,$3,now()+interval '24 hours')
+    RETURNING id,user_id,media_url,caption,expires_at,created_at`, [req.user.id, mediaUrl, caption]);
+  res.status(201).json(q.rows[0]);
+});
+
+app.delete('/statuses/:id', auth, async (req, res) => {
+  const q = await db('DELETE FROM statuses WHERE id=$1 AND user_id=$2 RETURNING id', [req.params.id, req.user.id]);
+  if (!q.rows[0]) return res.status(404).json({ error: 'status not found' });
+  res.json({ ok: true });
+});
+
+app.patch('/me', auth, async (req, res) => {
+  const displayName = req.body?.displayName;
+  const avatarUrl = req.body?.avatarUrl;
+  const q = await db(`UPDATE users SET display_name=COALESCE($1,display_name),avatar_url=COALESCE($2,avatar_url),updated_at=now()
+    WHERE id=$3 RETURNING id,phone,display_name,avatar_url,role,status`, [displayName ?? null, avatarUrl ?? null, req.user.id]);
+  res.json(q.rows[0]);
+});
+
 app.post('/blocks/:userId', auth, async (req, res) => {
   await db('INSERT INTO blocks(blocker_id,blocked_id) VALUES($1,$2) ON CONFLICT DO NOTHING', [req.user.id, req.params.userId]);
   res.json({ ok: true });
