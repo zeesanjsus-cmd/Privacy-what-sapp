@@ -330,30 +330,47 @@ class _StatusState extends State<Status> {
 
   Future<void> addStatus() async {
     caption.clear();
-    final value = await showDialog<String>(
+    final choice = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: panel,
         title: const Text('New status'),
-        content: TextField(
-          controller: caption,
-          autofocus: true,
-          maxLines: 4,
-          decoration: const InputDecoration(hintText: 'Write a status...'),
-        ),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(
+            controller: caption,
+            maxLines: 4,
+            decoration: const InputDecoration(hintText: 'Write a status...'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.pop(context, 'image'),
+            icon: const Icon(Icons.photo_library_outlined),
+            label: const Text('Choose image'),
+          ),
+        ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: red),
-            onPressed: () => Navigator.pop(context, caption.text.trim()),
+            onPressed: () => Navigator.pop(context, 'text'),
             child: const Text('Post'),
           ),
         ],
       ),
     );
-    if (value == null || value.isEmpty) return;
+    if (choice == null) return;
     try {
-      await api.post('/statuses', {'caption': value});
+      if (choice == 'image') {
+        final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+        if (file == null) return;
+        final uploaded = await api.upload('/media/upload', file);
+        await api.post('/statuses', {
+          'mediaUrl': uploaded['url'],
+          'caption': caption.text.trim(),
+        });
+      } else if (caption.text.trim().isNotEmpty) {
+        await api.post('/statuses', {'caption': caption.text.trim()});
+      }
       await load();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
