@@ -27,6 +27,16 @@ class Api {
     if (r.statusCode >= 400) throw Exception(_err(r));
     return jsonDecode(r.body);
   }
+  Future<dynamic> upload(String path, XFile file) async {
+    final token = await storage.read(key: 'token');
+    final request = http.MultipartRequest('POST', Uri.parse('$apiBaseUrl$path'));
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(await http.MultipartFile.fromPath('file', file.path, filename: file.name));
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode >= 400) throw Exception(_err(response));
+    return jsonDecode(response.body);
+  }
   String _err(http.Response r) {
     try { return jsonDecode(r.body)['error'] ?? 'Request failed'; } catch (_) { return 'Request failed'; }
   }
@@ -246,8 +256,15 @@ class _ChatState extends State<Chat> {
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (file == null) return;
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image selected. Upload integration is next.')));
+    try {
+      final uploaded = await api.upload('/media/upload', file);
+      final r = await api.post('/conversations/${widget.id}/messages', {
+        'body': '', 'mediaUrl': uploaded['url'], 'messageType': 'image'
+      });
+      if (mounted) setState(() => messages = [...messages, r]);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   @override void initState() { super.initState(); load(); }
