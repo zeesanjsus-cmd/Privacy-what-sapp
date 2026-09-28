@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -240,6 +241,15 @@ class _ChatState extends State<Chat> {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
+
+  Future<void> pickImage() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (file == null) return;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image selected. Upload integration is next.')));
+  }
+
   @override void initState() { super.initState(); load(); }
   @override void dispose() { input.dispose(); super.dispose(); }
 
@@ -267,7 +277,7 @@ class _ChatState extends State<Chat> {
                 ),
         ),
         Container(color: panel, padding: const EdgeInsets.all(8), child: Row(children: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.attach_file)),
+          IconButton(onPressed: pickImage, icon: const Icon(Icons.attach_file)),
           Expanded(child: TextField(controller: input, onSubmitted: (_) => send(), decoration: InputDecoration(hintText: 'Message', filled: true, fillColor: black, border: OutlineInputBorder(borderRadius: BorderRadius.circular(25))))),
           IconButton(onPressed: send, icon: const Icon(Icons.send, color: red)),
         ])),
