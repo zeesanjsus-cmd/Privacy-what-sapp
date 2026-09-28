@@ -311,8 +311,9 @@ io.on('connection', (socket) => {
     } catch (e) { socket.emit('error', { error: 'message failed' }); }
   });
   for (const event of ['call:offer','call:answer','call:ice']) {
-    socket.on(event, (m) => {
-      if (m?.conversationId) socket.to('conversation:' + m.conversationId).emit(event, { ...m, senderId: socket.user.sub });
+    socket.on(event, async (m) => {
+      if (!m?.conversationId || !(await isMember(m.conversationId, socket.user.sub))) return;
+      socket.to('conversation:' + m.conversationId).emit(event, { ...m, senderId: socket.user.sub });
     });
   }
 });
