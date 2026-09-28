@@ -260,6 +260,16 @@ class _ChatState extends State<Chat> {
     }
   }
 
+  String _formatTime(dynamic value) {
+    final dt = DateTime.tryParse(value?.toString() ?? '');
+    if (dt == null) return '';
+    final local = dt.toLocal();
+    final h = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final mm = local.minute.toString().padLeft(2, '0');
+    final ap = local.hour >= 12 ? 'PM' : 'AM';
+    return '$h:$mm $ap';
+  }
+
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
@@ -306,12 +316,30 @@ class _ChatState extends State<Chat> {
                           color: mine ? red.withOpacity(.22) : panel,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: media != null
-                            ? Image.network(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (media != null)
+                              Image.network(
                                 media.toString(), width: 220, fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => const Text('Image unavailable'),
                               )
-                            : Text(m['body'] ?? ''),
+                            else
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(m['body'] ?? ''),
+                              ),
+                            if (_formatTime(m['created_at'] ?? m['createdAt']).isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  _formatTime(m['created_at'] ?? m['createdAt']),
+                                  style: const TextStyle(fontSize: 10, color: Colors.white54),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     );
                   },
