@@ -28,7 +28,7 @@ app.use(cors({ origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'pro
 app.use(express.json({ limit: '2mb' }));
 const mediaDir = path.join(process.cwd(), 'uploads');
 fs.mkdirSync(mediaDir, { recursive: true });
-const upload = multer({ dest: mediaDir, limits: { fileSize: 20 * 1024 * 1024 } });
+const upload = multer({ dest: mediaDir, limits: { fileSize: 20 * 1024 * 1024 }, fileFilter: (req, file, cb) => { const allowed = new Set(['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm']); cb(null, allowed.has(file.mimetype)); } });
 app.use('/uploads', express.static(mediaDir, { maxAge: '1h' }));
 app.use(apiLimiter);
 
