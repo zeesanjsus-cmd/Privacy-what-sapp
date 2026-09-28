@@ -570,9 +570,23 @@ class Calls extends StatelessWidget {
   const Calls({super.key});
   @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Calls')),
-    body: ListView(children: const [
-      ListTile(leading: CircleAvatar(backgroundColor: red, child: Icon(Icons.call)), title: Text('Call history'), subtitle: Text('Your recent calls will appear here.')),
-      ListTile(leading: Icon(Icons.info_outline), title: Text('Live calling setup'), subtitle: Text('WebRTC + TURN server is required for real voice/video media.')),
+    body: ListView(children: [
+      ListTile(
+        leading: const CircleAvatar(backgroundColor: red, child: Icon(Icons.call)),
+        title: const Text('Start a voice call'),
+        subtitle: const Text('Choose a contact from your chats to call.'),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Chats())),
+      ),
+      const ListTile(
+        leading: Icon(Icons.videocam_outlined),
+        title: Text('Video calling'),
+        subtitle: Text('Camera and network media require WebRTC/TURN setup.'),
+      ),
+      const ListTile(
+        leading: Icon(Icons.info_outline),
+        title: Text('Calling status'),
+        subtitle: Text('Call interface is ready; live media transport is the remaining integration.'),
+      ),
     ]),
   );
 }
