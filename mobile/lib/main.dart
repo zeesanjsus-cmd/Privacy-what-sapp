@@ -216,6 +216,7 @@ class _ChatsState extends State<Chats> {
             for (final x in data) ListTile(
               leading: const CircleAvatar(backgroundColor: red, child: Icon(Icons.person)),
               title: Text(x['title'] ?? 'Chat'), subtitle: Text(x['last_message'] ?? 'No messages yet'),
+              trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Chat(id: x['id'], name: x['title'] ?? 'Chat'))).then((_) => load()),
             ),
           ]);
