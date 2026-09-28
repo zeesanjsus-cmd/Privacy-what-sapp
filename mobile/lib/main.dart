@@ -288,7 +288,13 @@ class _ChatState extends State<Chat> {
                     child: Container(
                       margin: const EdgeInsets.symmetric(vertical: 4), padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(16)),
-                      child: Text(messages[i]['body'] ?? ''),
+                      child: (messages[i]['media_url'] != null || messages[i]['mediaUrl'] != null)
+  ? Image.network(
+      (messages[i]['media_url'] ?? messages[i]['mediaUrl']).toString(),
+      width: 220, fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => const Text('Image unavailable'),
+    )
+  : Text(messages[i]['body'] ?? ''),
                     ),
                   ),
                 ),
