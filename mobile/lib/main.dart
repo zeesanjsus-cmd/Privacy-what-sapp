@@ -437,6 +437,28 @@ class _StatusState extends State<Status> {
   @override void initState() { super.initState(); load(); }
   @override void dispose() { caption.dispose(); super.dispose(); }
 
+  Future<void> openStatus(dynamic x) async {
+    final media = x['media_url'] ?? x['mediaUrl'];
+    if (media == null) return;
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: black,
+        child: InteractiveViewer(
+          child: Image.network(
+            media.toString(),
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Padding(
+              padding: EdgeInsets.all(30),
+              child: Text('Image unavailable'),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -473,6 +495,7 @@ class _StatusState extends State<Status> {
                               ),
                             )
                           : const CircleAvatar(backgroundColor: red, child: Icon(Icons.person)),
+                      onTap: (x['media_url'] ?? x['mediaUrl']) != null ? () => openStatus(x) : null,
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () => deleteStatus(x['id'].toString()),
