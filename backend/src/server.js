@@ -8,6 +8,8 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { Pool } = require('pg');
+let firebaseAdmin = null;
+try { firebaseAdmin = require('firebase-admin'); } catch {}
 
 const app = express();
 const server = http.createServer(app);
@@ -53,15 +55,23 @@ async function sendOtp(phone, otp) {
 }
 
 async function pushNotification(userId, title, body, data = {}) {
-  // Firebase Admin can be wired in production. Tokens are persisted in devices.
-  // We keep this adapter isolated so push delivery failure never breaks message delivery.
   try {
     const result = await db('SELECT push_token FROM devices WHERE user_id=$1 AND push_token IS NOT NULL', [userId]);
     if (!result.rows.length) return { sent: 0 };
-    if (process.env.FCM_ENABLED !== 'true') return { sent: 0, queued: result.rows.length };
-    // FCM integration is enabled only when a provider implementation is configured.
-    console.warn('FCM_ENABLED=true but provider adapter is not installed; notification skipped');
-    return { sent: 0, queued: result.rows.length };
+    if (process.env.FCM_ENABLED !== 'true' || !firebaseAdmin) return { sent: 0, queued: result.rows.length };
+    if (!firebaseAdmin.apps.length) {
+      const raw = process.env.FCM_SERVICE_ACCOUNT_JSON;
+      if (!raw) return { sent: 0, queued: result.rows.length };
+      const serviceAccount = JSON.parse(raw);
+      firebaseAdmin.initializeApp({ credential: firebaseAdmin.credential.cert(serviceAccount) });
+    }
+    const tokens = result.rows.map(r => r.push_token).filter(Boolean);
+    const response = await firebaseAdmin.messaging().sendEachForMulticast({
+      tokens,
+      notification: { title, body },
+      data: Object.fromEntries(Object.entries(data).map(([k,v]) => [k, String(v)]))
+    });
+    return { sent: response.successCount, failed: response.failureCount };
   } catch (e) {
     console.error('push notification error', e.message);
     return { sent: 0 };
