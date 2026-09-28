@@ -7,6 +7,9 @@ const rateLimit = require('express-rate-limit');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 const { Pool } = require('pg');
 let firebaseAdmin = null;
 try { firebaseAdmin = require('firebase-admin'); } catch {}
@@ -23,6 +26,10 @@ const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 180, standardHeaders: t
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json({ limit: '2mb' }));
+const mediaDir = path.join(process.cwd(), 'uploads');
+fs.mkdirSync(mediaDir, { recursive: true });
+const upload = multer({ dest: mediaDir, limits: { fileSize: 20 * 1024 * 1024 } });
+app.use('/uploads', express.static(mediaDir, { maxAge: '1h' }));
 app.use(apiLimiter);
 
 const otpHash = (otp) => crypto.createHash('sha256').update(otp + (process.env.OTP_PEPPER || '')).digest('hex');
@@ -207,6 +214,16 @@ app.post('/conversations/:id/messages', auth, async (req, res) => {
   const members = await db('SELECT user_id FROM conversation_members WHERE conversation_id=$1 AND user_id<>$2', [req.params.id, req.user.id]);
   for (const m of members.rows) await pushNotification(m.user_id, req.user.display_name || req.user.phone, body || 'New message', { conversationId: req.params.id, messageId: msg.id });
   res.status(201).json(msg);
+});
+
+app.post('/media/upload', auth, upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'file required' });
+  const ext = path.extname(req.file.originalname || '').slice(0, 10).replace(/[^a-zA-Z0-9.]/g, '');
+  const finalName = req.file.filename + ext;
+  const finalPath = path.join(mediaDir, finalName);
+  fs.renameSync(req.file.path, finalPath);
+  const base = process.env.PUBLIC_BASE_URL || ('http://localhost:' + PORT);
+  res.status(201).json({ url: base.replace(/\\/$/, '') + '/uploads/' + finalName, filename: req.file.originalname, mimeType: req.file.mimetype, size: req.file.size });
 });
 
 app.get('/statuses', auth, async (req, res) => {
