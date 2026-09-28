@@ -24,7 +24,7 @@ const otpLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 5, standardHeaders
 const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 180, standardHeaders: true, legacyHeaders: false });
 
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+app.use(cors({ origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' ? false : '*') }));
 app.use(express.json({ limit: '2mb' }));
 const mediaDir = path.join(process.cwd(), 'uploads');
 fs.mkdirSync(mediaDir, { recursive: true });
