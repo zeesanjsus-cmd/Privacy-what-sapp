@@ -280,6 +280,15 @@ app.post('/reports', auth, async (req, res) => {
   res.status(201).json(q.rows[0]);
 });
 
+app.get('/owner/revenue-summary', auth, ownerOnly, async (req, res) => {
+  const q = await db(`SELECT COALESCE(SUM(amount_minor),0)::bigint AS total_amount_minor,
+    COUNT(*)::int AS events,
+    COUNT(DISTINCT user_id)::int AS paying_users
+    FROM revenue_events`);
+  const r = await db(`SELECT COALESCE(SUM(points),0)::bigint AS points_issued FROM reward_transactions`);
+  res.json({ revenue: q.rows[0], rewards: r.rows[0] });
+});
+
 app.get('/owner/reports', auth, ownerOnly, async (req, res) => res.json((await db('SELECT * FROM reports ORDER BY created_at DESC LIMIT 1000')).rows));
 app.get('/owner/users', auth, ownerOnly, async (req, res) => res.json((await db('SELECT id,phone,display_name,role,status,created_at FROM users ORDER BY created_at DESC LIMIT 5000')).rows));
 app.get('/owner/audit-logs', auth, ownerOnly, async (req, res) => res.json((await db('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 5000')).rows));
