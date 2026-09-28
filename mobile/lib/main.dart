@@ -237,8 +237,14 @@ class _ChatState extends State<Chat> {
   final input = TextEditingController();
   List<dynamic> messages = [];
   bool loading = true;
+  String? myUserId;
   Future<void> load() async {
-    try { final r = await api.get('/conversations/${widget.id}/messages'); if (r is List) messages = r; } catch (_) {}
+    try {
+      final me = await api.get('/me');
+      myUserId = me['id']?.toString();
+      final r = await api.get('/conversations/${widget.id}/messages');
+      if (r is List) messages = r;
+    } catch (_) {}
     if (mounted) setState(() => loading = false);
   }
   Future<void> send() async {
@@ -284,20 +290,30 @@ class _ChatState extends State<Chat> {
               ? const Center(child: CircularProgressIndicator())
               : ListView.builder(
                   padding: const EdgeInsets.all(12), itemCount: messages.length,
-                  itemBuilder: (context, i) => Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4), padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(16)),
-                      child: (messages[i]['media_url'] != null || messages[i]['mediaUrl'] != null)
-  ? Image.network(
-      (messages[i]['media_url'] ?? messages[i]['mediaUrl']).toString(),
-      width: 220, fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Text('Image unavailable'),
-    )
-  : Text(messages[i]['body'] ?? ''),
-                    ),
-                  ),
+                  itemBuilder: (context, i) {
+                    final m = messages[i];
+                    final senderId = (m['sender_id'] ?? m['senderId'])?.toString();
+                    final mine = myUserId != null && senderId == myUserId;
+                    final media = m['media_url'] ?? m['mediaUrl'];
+                    return Align(
+                      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 280),
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: mine ? red.withOpacity(.22) : panel,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: media != null
+                            ? Image.network(
+                                media.toString(), width: 220, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Text('Image unavailable'),
+                              )
+                            : Text(m['body'] ?? ''),
+                      ),
+                    );
+                  },
                 ),
         ),
         Container(color: panel, padding: const EdgeInsets.all(8), child: Row(children: [
